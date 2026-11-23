@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="description" content="전기기능사 실기 공개문제 1~18번 제어판 배선 연습 시뮬레이터">
-<style>body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>
+<style>:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>
 <title>전기기능사 제어판 시뮬레이터</title>
 <meta name="author" content="이동현">
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -202,6 +202,43 @@ button,input,select{font:inherit;color:inherit}
 .gacts{margin:-4px 0 12px;align-items:center}
 .gtm{color:var(--muted);font-size:13px;margin-left:4px} .gtm b{font-family:var(--font-mono);color:var(--fg);font-weight:500}
 .seqback{position:fixed;inset:0;background:rgba(5,7,9,.7);z-index:55}
+/* AI에게 물어보기 */
+.modal-card.aiw{width:min(840px,100%)}
+.chkai:empty{display:none}
+.aibar{margin-top:10px}
+.aibar .note{margin:0}
+.aitop{margin:0 0 12px}
+.aisec{margin-bottom:12px}
+.aihd{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px}
+.aihd b{font-size:12.5px;color:var(--muted);font-weight:600}
+.aihd b span{font-family:var(--font-mono);font-weight:500;margin-left:4px}
+.aipicks{display:flex;flex-wrap:wrap;gap:6px;max-height:168px;overflow:auto;padding:2px}
+.aipick{font-family:var(--font-mono);font-size:11.5px;text-align:left}
+.aipick .aik{font-family:var(--font-ui);font-weight:600;font-size:11px;white-space:nowrap}
+.aipick .k-bad,.aipick .k-miss{color:#ff8a7c} .aipick .k-color{color:#ffb35c} .aipick .k-dangle{color:#c3cad2}
+.aipick[aria-pressed="false"]{opacity:.55}
+.aiopts{display:flex;flex-wrap:wrap;gap:2px 18px;margin:0 0 10px}
+.aiextra{display:block;font-size:12.5px;color:var(--muted);margin-bottom:12px}
+.aiextra textarea,#aiText{display:block;width:100%;box-sizing:border-box;margin-top:6px;background:var(--bg-2);border:1px solid var(--line-2);border-radius:8px;padding:8px 10px;color:var(--fg);font:13px/1.5 var(--font-ui);resize:vertical}
+#aiText{font:12px/1.55 var(--font-mono);height:230px;margin-top:8px}
+.aiclaude{border:1px solid #6b5a2c;background:#211d14;border-radius:10px;padding:10px 12px;margin-bottom:12px}
+.aiclaude .note{margin-top:7px}
+.aicopy .note{margin-top:7px}
+.aicopymsg.ok{color:var(--ok)} .aicopymsg.warn{color:var(--amber)}
+.aiout,.aitext{font-size:13.5px;line-height:1.65;color:#dde1e5;overflow-wrap:anywhere}
+.aiout{margin-top:10px;max-height:46vh;overflow:auto;border-top:1px solid #4a3f22;padding-top:8px}
+.aitext{max-height:48vh;overflow:auto;margin:6px 0 8px}
+.aiout p,.aitext p{margin:4px 0}
+.aiout h4,.aitext h4{margin:10px 0 4px;font-size:13.5px;color:var(--amber);font-weight:600}
+.aiout ul,.aitext ul{margin:4px 0;padding-left:18px}
+.aiout li,.aitext li{margin:2px 0}
+.aiout b,.aitext b{color:#fff}
+.aiout code,.aitext code{font-family:var(--font-mono);font-size:12px;background:var(--bg-2);padding:0 4px;border-radius:4px}
+.aiout hr,.aitext hr{border:0;border-top:1px solid var(--line);margin:8px 0}
+.aithink{color:var(--muted)}
+.ainote{font-size:12.5px;color:var(--amber)} .ainote.bad{color:#ff8a7c}
+.aians{margin-top:10px;border:1px solid #6b5a2c;border-radius:8px;background:#1d1a13;padding:8px 10px}
+.aians summary{cursor:pointer;font-size:12.5px;font-weight:600;color:var(--amber)}
 .seqwin{display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line-2);border-radius:10px;overflow:hidden;min-height:0}
 .seqwin[hidden]{display:none}
 .seqwin.float{position:fixed;z-index:60;top:max(16px,env(safe-area-inset-top,0px));bottom:max(16px,env(safe-area-inset-bottom,0px));left:max(16px,env(safe-area-inset-left,0px));right:max(16px,env(safe-area-inset-right,0px));height:auto!important;box-shadow:0 18px 50px rgba(0,0,0,.5)}
@@ -418,9 +455,10 @@ button,input,select{font:inherit;color:inherit}
       <section class="card" data-for="wire" id="cardAns">
         <h2>정답 · 점검</h2>
         <div class="seg vmseg" id="vmSeg" role="group" aria-label="보기 선택"><button data-v="mine" class="on">내 배선</button><button data-v="chk">틀린 곳 점검</button><button data-v="ans">정답 회로</button></div>
-        <p class="note" id="vmNote">'틀린 곳 점검'은 내 배선을 정답과 연결 기준으로 비교해서 잘못 이은 선·색 틀린 선·빠진 연결을 표시해요 (단자대 번호는 달라도 돼요). '정답 회로'에서는 주결선·보조결선·단자대별로 정답을 볼 수 있어요.</p>
+        <p class="note" id="vmNote">'틀린 곳 점검'은 내 배선을 정답과 연결 기준으로 비교해서 잘못 이은 선·색 틀린 선·빠진 연결을 표시해요 (단자대 번호는 달라도 돼요). '정답 회로'에서는 주결선·보조결선·단자대별로 정답을 볼 수 있어요. 틀린 곳은 'AI에게 물어보기'로 질문을 만들어 AI에게 물어볼 수 있어요.</p>
         <div id="chkBox" hidden>
           <div class="chksum" id="chkSum"></div>
+          <div class="chkai" id="chkAI"></div>
           <div class="chklist" id="chkList"></div>
           <p class="note">배선을 고치면 바로 다시 확인해요. 목록을 누르면 그 자리로 이동하고, 빠진 연결은 이어야 할 두 단자를 점선으로 보여줘요.</p>
         </div>
@@ -2407,6 +2445,7 @@ function renderChkPanel(){
   for (const w of APP.wires){ const r = C.wires.get(w.id); if (r && r.st !== 'ok') issues.push({ kind:r.st, w, r }); }
   issues.sort((p, q) => ['bad','dangle','color'].indexOf(p.kind) - ['bad','dangle','color'].indexOf(q.kind));
   const total = issues.length + C.missing.length;
+  aiRenderCard(total);
   $('chkSum').innerHTML = `<div class="chkstat"><b>${C.netsDone}<small> / ${C.netsTotal}</small></b><span>완성된 선 묶음</span></div>
     <div class="chkpills"><span class="cpill ok">맞음 ${C.cnt.ok}</span><span class="cpill bad">잘못 이음 ${C.cnt.bad}</span><span class="cpill warn">색 ${C.cnt.color}</span>${C.cnt.dangle ? `<span class="cpill">떠 있음 ${C.cnt.dangle}</span>` : ''}<span class="cpill miss">빠짐 ${C.missing.length}</span></div>`;
   if (!total){ $('chkList').innerHTML = `<p class="okmsg">정답 회로와 연결이 모두 같아요. 채점하기로 동작까지 확인해 보세요.</p>`; return; }
@@ -2422,6 +2461,285 @@ function renderChkPanel(){
       if (APP.chk.focus != null){ const a = TERM[m.x], c = TERM[m.y]; focusOn((a.x + c.x) / 2, (a.y + c.y) / 2); toast(`이어야 할 두 단자 · ${ansLabel(m.x)} ↔ ${ansLabel(m.y)} (${pairHint(m.x, m.y)})`, 'warn'); } }
   }; });
   const more = $('chkMore'); if (more) more.onclick = () => { APP.chk.more = true; renderChkPanel(); };
+}
+
+/* ===== AI에게 물어보기: 틀린 곳 · 정답 연결 · 내 배선을 질문 하나로 정리 =====
+   어디서 열든: 질문 복사 → Claude · ChatGPT · Gemini에 붙여 넣기
+   claude.ai에서 열었을 때만: Claude에게 바로 묻기 (보는 사람의 Claude 사용량으로 답함) */
+const AI = { sample:null, off:false, picks:null, pickKey:'', opt:{ op:true, grade:true, ref:true, mine:true }, extra:'', ans:null, ctl:null, cardOpen:true, total:0, gc:null };
+const AI_KIND = { bad:'잘못 이음', color:'전선 색', dangle:'떠 있는 선', miss:'빠진 연결' };
+const AI_ST = { ok:'맞음', bad:'잘못 이음', color:'색 틀림', dangle:'떠 있음' };
+const AI_FN = {
+  eocr:{1:'주회로 L1 입력',2:'주회로 L2 입력',3:'주회로 L3 입력',4:'96, b접점 95-96',5:'98, a접점 97-98',6:'전원 A1',7:'주회로 U 출력',8:'주회로 V 출력',9:'주회로 W 출력',10:'95, b접점 공통',11:'97, a접점 공통',12:'전원 A2'},
+  mc:{1:'주접점 L1',2:'주접점 L2',3:'주접점 L3',4:'보조 a접점 4-10',5:'보조 b접점 5-11',6:'코일 A1',7:'주접점 U',8:'주접점 V',9:'주접점 W',10:'보조 a접점 4-10',11:'보조 b접점 5-11',12:'코일 A2'},
+  relay:{1:'공통, a접점 1-3·b접점 1-4',2:'코일',3:'a접점 1-3',4:'b접점 1-4',5:'b접점 8-5',6:'a접점 8-6',7:'코일',8:'공통, a접점 8-6·b접점 8-5'},
+  timer:{1:'순시 a접점 1-3',2:'코일',3:'순시 a접점 1-3',5:'한시 b접점 8-5',6:'한시 a접점 8-6',7:'코일',8:'한시 접점 공통'},
+  flicker:{2:'전원',5:'b접점 8-5',6:'a접점 8-6',7:'전원',8:'접점 공통'},
+  fls:{1:'E3 공통 전극',2:'b접점 4-2',3:'a접점 4-3',4:'접점 공통',5:'전원',6:'전원',7:'E1 고수위 전극',8:'E2 저수위 전극'},
+};
+const AI_OFF_CODES = ['not_granted','sampling_disabled','not_declared','capability_disabled','capability_removed'];
+
+/* 단자 이름: 핀 번호 + 그 핀의 역할 (AI가 회로를 읽을 수 있게) */
+function aiTerm(id){
+  const t = TERM[id]; if (!t) return id;
+  if (t.kind === 'tbi' || t.kind === 'tbo') return `${t.dev} ${t.pin}번 ${t.kind === 'tbi' ? '안쪽' : '바깥'}`;
+  if (t.kind === 'ext'){
+    if (/^TB[1-4]$/.test(t.dev)) return t.label;
+    const c = String(t.pin)[0];
+    const role = /^PB/.test(t.dev) ? ({ a:'a접점', b:'b접점' })[c] : t.dev === 'SS' ? ({ a:'A 자동 접점', b:'M 수동 접점' })[c] : '';
+    return `${t.dev} ${t.pin}${role ? `(${role})` : ''}`;
+  }
+  const d = PDEV[t.dev];
+  if (!d || d.type === 'mccb' || d.type === 'fuse') return t.label;
+  const f = AI_FN[d.type] && AI_FN[d.type][t.pin];
+  return `${t.dev} ${t.pin}번${f ? `(${f})` : ''}`;
+}
+const aiColor = c => COLORS[c] ? `${COLORS[c].name} ${COLORS[c].size}㎟` : String(c);
+
+/* 틀린 곳 목록 (점검 화면과 같은 기준) */
+function aiIssues(){
+  const C = runCheck(), list = [], ord = ['bad','dangle','color'];
+  for (const w of APP.wires){ const r = C.wires.get(w.id); if (r && r.st !== 'ok') list.push({ key:'w' + w.id, kind:r.st, a:w.a, b:w.b, color:w.color, msg:r.msg }); }
+  list.sort((p, q) => ord.indexOf(p.kind) - ord.indexOf(q.kind));
+  for (const m of C.missing) list.push({ key:`m${m.x}~${m.y}`, kind:'miss', a:m.x, b:m.y, msg:`${pairHint(m.x, m.y)} 이어야 해요` });
+  return { C, list };
+}
+/* 처음 고를 곳: 점검 목록에서 하나를 골라 둔 상태면 그것만, 아니면 전부 */
+function aiDefaultPicks(list){
+  const w = APP.sel != null && list.find(it => it.key === 'w' + APP.sel);
+  if (w) return new Set([w.key]);
+  const C = APP.chk.res, fm = APP.chk.focus != null && C && C.missing[APP.chk.focus];
+  if (fm && list.some(it => it.key === `m${fm.x}~${fm.y}`)) return new Set([`m${fm.x}~${fm.y}`]);
+  return new Set(list.map(it => it.key));
+}
+/* 동작 시험(채점)에서 다르게 움직인 곳 · 3가닥 · 접지 (색은 틀린 곳 목록에 이미 있음) */
+function aiGradeFails(){
+  const k = `${PN}:${APP.ver}`;
+  if (!AI.gc || AI.gc.k !== k) AI.gc = { k, f:runSuite(APP.wires).concat(checkRules(APP.wires)).filter(r => !r.ok && r.title !== '전선 색상 · 굵기') };
+  return AI.gc.f;
+}
+/* 정답 회로에서 같은 선으로 이어져야 하는 단자 묶음 (TB5·TB6 번호는 빼고) */
+function aiRefNets(){
+  const lab = refLab(), by = {};
+  for (const [id, r] of Object.entries(lab)) (by[r] = by[r] || []).push(id);
+  const ext = id => TERM[id].kind === 'ext' ? 0 : 1;
+  return Object.values(by).filter(ids => ids.length > 1)
+    .map(ids => ids.sort((a, b) => ext(a) - ext(b) || TERM[a].idx - TERM[b].idx))
+    .sort((p, q) => Math.min(...p.map(id => TERM[id].idx)) - Math.min(...q.map(id => TERM[id].idx)));
+}
+
+/* 질문 글 만들기 */
+function aiPrompt(forClaude){
+  const I = aiIssues(), picks = AI.picks || new Set(I.list.map(it => it.key));
+  const sel = I.list.filter(it => picks.has(it.key)), O = AI.opt, t = tm(), L = [];
+  const types = new Set(Object.values(PDEV).map(d => d.type)), tn = { relay:'릴레이', timer:'타이머', flicker:'플리커릴레이', fls:'FLS', mc:'MC', eocr:'EOCR' };
+  const p8 = ['relay','timer','flicker','fls'].filter(k => types.has(k)).map(k => tn[k]).join('·'), p12 = ['mc','eocr'].filter(k => types.has(k)).map(k => tn[k]).join('·');
+  L.push(`전기기능사 실기 공개문제 ${PN}번 제어판을 연습용 시뮬레이터에서 배선했는데, 정답 회로와 다른 곳이 나왔어요. 아래 자료를 보고 틀린 곳을 설명해 주세요.`);
+  L.push('', '[부탁]',
+    '- 틀린 곳마다 ① 무엇이 잘못됐는지 ② 그 선이 시퀀스 회로도에서 어떤 역할을 하는지 ③ 어느 단자에서 빼서 어디에 이어야 하는지 소켓 핀 번호로 알려 주세요.',
+    '- 고치는 방법이 실기 시험 규칙(한 단자에 2가닥까지, 제어판 밖으로 나가는 선은 단자대를 거쳐서, 전선 색)에 맞는지도 짚어 주세요.',
+    '- 한국어로, 쉽고 짧게 답해 주세요.');
+  if (AI.extra.trim()) L.push(`- 특히 궁금한 점: ${AI.extra.trim().replace(/\s*\n\s*/g, ' ')}`);
+  L.push('', '[자료 보는 법]',
+    `- "${(Object.values(PDEV).find(d => d.type === 'relay') || { id:'X' }).id} 6번(a접점 8-6)"처럼 기구 소켓의 핀 번호와 그 핀의 역할을 같이 적었어요.${p8 ? ` ${p8}는 8핀` : ''}${p12 ? `${p8 ? ',' : ''} ${p12}은 12핀` : ''} 소켓이에요.`,
+    '- 푸시버튼 a1·a2는 a접점, b1·b2는 b접점 단자예요. 셀렉터 SS는 A(자동)에서 a1·a2가, M(수동)에서 b1·b2가 닫혀요. 램프·부저는 1·2번 단자예요.',
+    '- TB1은 전원(L1·L2·L3·PE), TB2는 전동기 M1, TB3은 전동기 M2 단자대예요. ' + (P.fam === 'A' ? 'TB4는 FLS 전극(E1·E2·E3) 단자대예요.' : 'TB4는 리밋스위치 단자대예요(1·2번 LS1 접점, 3·4번 LS2 접점).'),
+    '- TB5는 제어판 위쪽, TB6은 아래쪽 단자대예요. "안쪽"은 제어판 안쪽 나사, "바깥"은 외부 배관 쪽 나사예요. TB5·TB6 단자 번호는 사람마다 달라도 돼요.',
+    '- 정답과 비교한 기준은 "어떤 단자끼리 같은 선(같은 전위)으로 이어졌나"예요.',
+    '- 전선 색: 주회로 L1 갈색·L2 흑색·L3 회색 2.5㎟, 보조회로 황색 1.5㎟, 보호도체 녹황 2.5㎟.');
+  if (O.op && OPTEXT_ALL[PN]) L.push('', '[동작 사항 (공개문제 원문)]', ...OPTEXT_ALL[PN].filter(s => !/^※/.test(s)));
+  const all = I.list.length;
+  L.push('', sel.length ? `[틀린 곳 ${sel.length}군데]${sel.length < all ? ` (전체 ${all}군데 중 고른 것)` : ''}` : '[틀린 곳]');
+  if (!sel.length) L.push(all ? '- (이번에는 고른 곳이 없어요. 아래 동작 시험 결과를 봐 주세요.)' : '- 연결로 비교하면 정답과 다른 곳이 없어요.');
+  sel.forEach((it, i) => {
+    L.push(`${i + 1}) ${AI_KIND[it.kind]} · ${aiTerm(it.a)} ↔ ${aiTerm(it.b)}${it.kind === 'miss' ? '' : ` · ${aiColor(it.color)}`}`, `   → ${it.msg}`);
+  });
+  if (O.grade){
+    const F = aiGradeFails();
+    if (F.length){
+      L.push('', `[시뮬레이터 동작 시험에서 정답과 다르게 움직인 곳] (설정: ${P.fam === 'A' ? `T ${t.T}초, FR ${t.FR}초` : `T1 ${t.T1}초, T2 ${t.T2}초`})`);
+      /* 같은 증상이 여러 시험에서 나오면 한 번만 */
+      const G = new Map();
+      for (const r of F){ const k = r.issues.join('\n') + '\n' + r.hint; if (!G.has(k)) G.set(k, { r, titles:[] }); G.get(k).titles.push(r.title); }
+      for (const { r, titles } of G.values()){
+        L.push(`- ${titles.length > 2 ? `${titles[0]} 등 시험 ${titles.length}개에서 같은 증상` : titles.join(' · ')}`);
+        for (const s of r.issues) L.push(`  · ${s}`);
+        if (r.hint) L.push(`  · 확인할 곳: ${r.hint}`);
+      }
+    }
+  }
+  if (O.ref){
+    L.push('', '[정답 회로에서 같은 선으로 이어져야 하는 단자 묶음]');
+    aiRefNets().forEach((ids, i) => L.push(`선 ${i + 1}: ${ids.map(aiTerm).join(', ')}`));
+  }
+  if (O.mine){
+    L.push('', `[지금 내 배선 ${APP.wires.length}가닥]`);
+    for (const w of APP.wires){ const r = I.C.wires.get(w.id); L.push(`- ${aiTerm(w.a)} ↔ ${aiTerm(w.b)} · ${aiColor(w.color)}${r ? ` [${AI_ST[r.st]}]` : ''}`); }
+  }
+  if (forClaude) L.push('', '[답 쓰는 방법]', '- 틀린 곳 번호 순서대로, 곳마다 3~5줄로 써 주세요.', '- 표는 쓰지 말고 굵은 글씨(**)와 짧은 목록(-)만 써 주세요.', '- 마지막에 고칠 순서를 한 줄로 정리해 주세요.');
+  return L.join('\n');
+}
+
+/* 답 글 보여주기: 굵은 글씨 · 목록 · 제목 정도만 */
+function aiMd(src){
+  const inl = s => esc(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/`([^`]+)`/g, '<code>$1</code>');
+  const out = []; let ul = false;
+  for (const raw of String(src).split('\n')){
+    const line = raw.replace(/\s+$/, '');
+    const li = /^\s*[-*•]\s+(.*)$/.exec(line);
+    if (li){ if (!ul){ out.push('<ul>'); ul = true; } out.push(`<li>${inl(li[1])}</li>`); continue; }
+    if (ul){ out.push('</ul>'); ul = false; }
+    if (!line.trim()) continue;
+    if (/^\s*([-*_])\1{2,}\s*$/.test(line)){ out.push('<hr>'); continue; }
+    const h = /^#{1,6}\s+(.*)$/.exec(line);
+    out.push(h ? `<h4>${inl(h[1])}</h4>` : `<p>${inl(line)}</p>`);
+  }
+  if (ul) out.push('</ul>');
+  return out.join('');
+}
+function aiAnsHtml(){
+  const A = AI.ans; if (!A) return '';
+  const body = A.text ? aiMd(A.text) : A.state === 'run' ? '<p class="aithink">Claude가 생각하는 중이에요… 보통 10~40초쯤 걸려요.</p>' : '';
+  return body + (A.note ? `<p class="ainote${A.state === 'err' && A.code !== 'cancelled' ? ' bad' : ''}">${esc(A.note)}</p>` : '');
+}
+function aiErrText(e){
+  const c = e && e.code;
+  if (c === 'cancelled') return '멈췄어요.';
+  if (AI_OFF_CODES.includes(c)) return 'Claude에게 바로 묻기를 쓸 수 없어요. 질문 복사로 물어보세요.';
+  if (c === 'rate_limited') return e.reason === 'usage_limit' ? 'Claude 사용 한도에 닿았어요. 나중에 다시 묻거나 질문 복사를 쓰세요.' : '지금은 요청이 많아요. 잠시 뒤에 다시 눌러 주세요.';
+  if (c === 'session_expired') return 'Claude에 다시 로그인한 뒤 눌러 주세요.';
+  if (c === 'refused') return '이 질문에는 답을 받지 못했어요. 물어볼 곳을 바꿔서 다시 해 보세요.';
+  if (c === 'prompt_too_large') return "질문이 너무 길어요. '내 배선 전체'를 빼고 다시 물어보세요.";
+  if (c === 'empty_completion') return '빈 답이 왔어요. 물어볼 곳을 줄여서 다시 해 보세요.';
+  return '답을 받다가 끊겼어요. 다시 눌러 주세요.';
+}
+
+/* Claude에게 바로 묻기 (claude.ai에서 열었을 때만 나타남) */
+async function aiInit(){
+  try {
+    if (!window.claude || typeof window.claude.use !== 'function') return;
+    const s = await window.claude.use('sample');
+    if (typeof s === 'function'){ AI.sample = s; aiSync(); }
+  } catch (e){ /* 없으면 질문 복사만 */ }
+}
+const aiCanAsk = () => !!AI.sample && !AI.off;
+async function aiAsk(){
+  if (!aiCanAsk() || AI.ctl) return;
+  const prompt = aiPrompt(true), again = !!(AI.ans && AI.ans.prompt === prompt && AI.ans.state === 'done');
+  const ctl = new AbortController(); AI.ctl = ctl; AI.cardOpen = true;
+  AI.ans = { pn:PN, ver:APP.ver, prompt, text:'', state:'run', note:'', code:'' };
+  aiShow();
+  try {
+    const r = await AI.sample(prompt, { signal:ctl.signal, modelTier:'default', cache:again ? false : true,
+      onText:({ text }) => { if (AI.ctl !== ctl) return; AI.ans.text = text; aiShow(); } });
+    if (AI.ctl !== ctl) return;
+    AI.ans.text = r.text; AI.ans.state = 'done';
+    AI.ans.note = r.truncated ? '답이 길어서 중간에 끊겼어요. 물어볼 곳을 줄여서 다시 물어보세요.' : '';
+  } catch (e){
+    if (AI.ctl !== ctl) return;
+    const code = (e && e.code) || 'upstream_error';
+    AI.ans.state = 'err'; AI.ans.code = code;
+    AI.ans.text = code === 'refused' ? '' : ((e && e.text) || AI.ans.text || '');
+    AI.ans.note = aiErrText(e);
+    if (AI_OFF_CODES.includes(code)) AI.off = true;
+  } finally {
+    if (AI.ctl === ctl) AI.ctl = null;
+    aiShow();
+  }
+}
+function aiStop(){ if (AI.ctl) AI.ctl.abort(); }
+
+/* 질문 복사: 막히면 글을 골라 두고 직접 복사하게 */
+async function aiCopy(){
+  const ta = $('aiText'), msg = $('aiCopyMsg'); if (!ta) return;
+  const txt = ta.value; let ok = false;
+  try { if (navigator.clipboard && navigator.clipboard.writeText){ await navigator.clipboard.writeText(txt); ok = true; } } catch (e){ ok = false; }
+  if (!ok){
+    try { ta.removeAttribute('readonly'); ta.focus(); ta.select(); ta.setSelectionRange(0, txt.length); ok = document.execCommand('copy'); }
+    catch (e){ ok = false; } finally { ta.setAttribute('readonly', ''); }
+  }
+  if (msg){ msg.hidden = false; msg.textContent = ok ? '복사했어요. Claude · ChatGPT · Gemini 대화창에 붙여 넣으세요.' : '자동 복사가 막혔어요. 아래 글을 길게 눌러 전체 선택한 뒤 복사하세요.'; msg.className = 'note aicopymsg ' + (ok ? 'ok' : 'warn'); }
+  if (ok){ try { ta.blur(); } catch (e){ /* 무시 */ } }
+  else { try { ta.focus(); ta.select(); } catch (e){ /* 무시 */ } }
+}
+
+/* 모달 */
+function aiPickKey(){ return `${PN}:${APP.ver}`; }
+function openAI(){
+  const I = aiIssues();
+  if (!AI.picks || AI.pickKey !== aiPickKey()){ AI.picks = aiDefaultPicks(I.list); AI.pickKey = aiPickKey(); }
+  const chips = I.list.map(it => `<button class="chip aipick" data-k="${esc(it.key)}" aria-pressed="${AI.picks.has(it.key)}"><b class="aik k-${it.kind}">${AI_KIND[it.kind]}</b>${esc(ansLabel(it.a))} ↔ ${esc(ansLabel(it.b))}</button>`).join('');
+  const opt = (k, label) => `<label class="check"><input type="checkbox" data-o="${k}"${AI.opt[k] ? ' checked' : ''}> ${label}</label>`;
+  openModal(`AI에게 물어보기 · 공개문제 ${PN}번`, `<div class="aibox">
+    <p class="note aitop">틀린 곳과 정답 연결, 내 배선을 질문 하나로 정리했어요. 고칠 곳을 고르고 물어보세요.</p>
+    ${I.list.length ? `<div class="aisec"><div class="aihd"><b>물어볼 곳 <span id="aiPickN"></span></b><button class="btn" id="aiAll">전체</button></div><div class="aipicks" id="aiPicks">${chips}</div></div>` : '<p class="okmsg">연결로 비교하면 정답과 다른 곳이 없어요. 채점에서 걸린 내용을 물어볼 수 있어요.</p>'}
+    <div class="aiopts">${opt('op', '동작 사항')}${opt('grade', '채점 결과')}${opt('ref', '정답 연결')}${opt('mine', '내 배선 전체')}</div>
+    <label class="aiextra">덧붙일 말 (선택)<textarea id="aiExtra" rows="2" placeholder="예: LS2가 왜 MC1 앞에 들어가는지 궁금해요">${esc(AI.extra)}</textarea></label>
+    <div class="aiclaude" id="aiClaude" hidden>
+      <div class="row"><button class="btn primary" id="aiAsk">Claude에게 바로 묻기</button><button class="btn" id="aiStop" hidden>멈추기</button><span class="note" id="aiState"></span></div>
+      <p class="note">내 Claude 사용량으로 답해요. 처음 한 번은 허용할지 물어봐요. 답은 '틀린 곳 점검' 칸에도 남아요.</p>
+      <div class="aiout" id="aiOut" hidden></div>
+    </div>
+    <div class="aicopy">
+      <div class="row"><button class="btn" id="aiCopy">질문 복사</button><span class="note" id="aiLen"></span></div>
+      <p class="note aicopymsg" id="aiCopyMsg" role="status" hidden></p>
+      <p class="note">복사한 다음 <a href="https://claude.ai/new" target="_blank" rel="noopener">Claude</a> · <a href="https://chatgpt.com/" target="_blank" rel="noopener">ChatGPT</a> · <a href="https://gemini.google.com/app" target="_blank" rel="noopener">Gemini</a> 대화창에 붙여 넣으면 돼요. 시퀀스 회로도를 캡처해서 같이 올리면 더 정확해요.</p>
+      <textarea id="aiText" readonly rows="10" aria-label="AI에게 보낼 질문"></textarea>
+    </div>
+  </div>`, 'aiw');
+  document.querySelectorAll('#aiPicks .aipick').forEach(b => { b.onclick = () => { const k = b.dataset.k; if (AI.picks.has(k)) AI.picks.delete(k); else AI.picks.add(k); b.setAttribute('aria-pressed', String(AI.picks.has(k))); aiRefresh(); }; });
+  const all = $('aiAll'); if (all) all.onclick = () => {
+    const on = AI.picks.size < I.list.length; AI.picks = new Set(on ? I.list.map(it => it.key) : []);
+    document.querySelectorAll('#aiPicks .aipick').forEach(b => b.setAttribute('aria-pressed', String(on))); aiRefresh(); };
+  document.querySelectorAll('.aiopts input').forEach(c => { c.onchange = () => { AI.opt[c.dataset.o] = c.checked; aiRefresh(); }; });
+  $('aiExtra').oninput = e => { AI.extra = e.target.value; aiRefresh(); };
+  $('aiAsk').onclick = aiAsk; $('aiStop').onclick = aiStop; $('aiCopy').onclick = aiCopy;
+  aiRefresh(); aiShow();
+}
+function aiRefresh(){
+  const ta = $('aiText'); if (!ta) return;
+  ta.value = aiPrompt(false);
+  $('aiLen').textContent = `${ta.value.length.toLocaleString()}자`;
+  const n = $('aiPickN'), all = $('aiAll');
+  if (n && AI.picks){ const tot = document.querySelectorAll('#aiPicks .aipick').length; n.textContent = `${AI.picks.size} / ${tot}`; if (all) all.textContent = AI.picks.size < tot ? '전체 고르기' : '전체 빼기'; }
+  const msg = $('aiCopyMsg'); if (msg && !msg.hidden){ msg.className = 'note aicopymsg'; msg.textContent = '질문이 바뀌었어요. 다시 복사해 주세요.'; }
+  aiSync();
+}
+/* 버튼 상태 맞추기 */
+function aiSync(){
+  const box = $('aiClaude');
+  if (box){
+    const can = aiCanAsk(), run = !!AI.ctl, A = AI.ans;
+    box.hidden = !can && !(A && A.pn === PN);
+    $('aiAsk').hidden = !can || run; $('aiStop').hidden = !run;
+    const same = A && A.state === 'done' && A.prompt === aiPrompt(true);
+    $('aiAsk').textContent = same ? '다시 묻기' : 'Claude에게 바로 묻기';
+    $('aiState').textContent = run ? (A && A.text ? '쓰는 중…' : '생각하는 중…') : '';
+    $('aiCopy').classList.toggle('primary', !can);
+  }
+}
+function aiShow(){
+  const out = $('aiOut');
+  if (out){ const A = AI.ans && AI.ans.pn === PN ? AI.ans : null; out.hidden = !A; if (A) out.innerHTML = aiAnsHtml(); }
+  aiSync(); aiRenderCard(AI.total);
+}
+
+/* '틀린 곳 점검' 칸: 물어보기 버튼과 받은 답 */
+function aiRenderCard(total){
+  AI.total = total;
+  const box = $('chkAI'); if (!box || !APP.chk.on || APP.ans.on) return;
+  const A = AI.ans && AI.ans.pn === PN ? AI.ans : null;
+  const old = box.querySelector('.aitext'), top = old ? old.scrollTop : 0;
+  const btn = total ? `<div class="row aibar"><button class="btn primary" id="btnAI">AI에게 물어보기</button><span class="note">틀린 곳을 질문 하나로 정리해요</span></div>` : '';
+  const ans = A ? `<details class="aians"${AI.cardOpen ? ' open' : ''}><summary>Claude 답변${A.state === 'run' ? ' · 쓰는 중' : ''}${A.ver !== APP.ver ? ' · 배선 바꾸기 전 답' : ''}</summary>
+    <div class="aitext">${aiAnsHtml()}</div>
+    <div class="row">${A.state === 'run' ? '<button class="btn" id="aiCardStop">멈추기</button>' : '<button class="btn" id="aiCardClear">답 지우기</button>'}</div></details>` : '';
+  box.innerHTML = btn + ans;
+  const nt = box.querySelector('.aitext'); if (nt && top) nt.scrollTop = top;
+  const b = $('btnAI'); if (b) b.onclick = openAI;
+  const d = box.querySelector('details'); if (d) d.addEventListener('toggle', () => { AI.cardOpen = d.open; });
+  const st = $('aiCardStop'); if (st) st.onclick = aiStop;
+  const cl = $('aiCardClear'); if (cl) cl.onclick = () => { AI.ans = null; aiShow(); };
 }
 
 /* ===== 포인터 입력 ===== */
@@ -2671,7 +2989,7 @@ function refreshRunUI(){
   document.querySelectorAll('#segWater button').forEach(b => b.classList.toggle('on', +b.dataset.v === st.water));
   for (const k of ['LS1','LS2']){ const b = $('btn' + k); if (b){ b.classList.toggle('on', st[k.toLowerCase()]); b.textContent = `${k} ${st[k.toLowerCase()] ? '감지 중' : '감지'}`; } }
 }
-function openModal(title, html){ $('modalTitle').textContent = title; $('modalBody').innerHTML = html; $('modal').hidden = false; $('modalClose').focus(); }
+function openModal(title, html, cls){ $('modalTitle').textContent = title; $('modalBody').innerHTML = html; $('modal').querySelector('.modal-card').className = 'modal-card' + (cls ? ' ' + cls : ''); $('modal').hidden = false; $('modalClose').focus(); }
 function closeModal(){ $('modal').hidden = true; }
 function openGrade(){
   const res = runSuite(APP.wires).concat(checkRules(APP.wires)), pass = res.filter(r => r.ok).length, t = tm();
@@ -2680,12 +2998,13 @@ function openGrade(){
   const tt = P.fam === 'A' ? `T ${t.T}초, FR ${t.FR}초` : `T1 ${t.T1}초, T2 ${t.T2}초`;
   APP.lastGrade = { pn:PN, pass, total:res.length, ver:APP.ver };
   const ms = tmrElapsed(), acts = [];
-  if (pass < res.length) acts.push('<button class="btn primary" id="gChk">틀린 곳 점검 보기</button>');
+  if (pass < res.length) acts.push('<button class="btn primary" id="gChk">틀린 곳 점검 보기</button><button class="btn" id="gAI">AI에게 물어보기</button>');
   if (ms >= 1000) acts.push(`<span class="gtm">타이머 <b>${fmtHMS(ms, true)}</b>${tmrRunning() ? ' (진행 중)' : ''}</span><button class="btn" id="gRec">이 결과로 기록</button>`);
   openModal(`채점 결과 · 공개문제 ${PN}번`, `<div class="score"><strong>${pass} / ${res.length}</strong><span>${pass === res.length ? '모든 항목 통과' : `${res.length - pass}개 항목 보완 필요`} · 전선 ${APP.wires.length}가닥 · ${tt}로 자동 시험</span></div>` +
     (acts.length ? `<div class="row gacts">${acts.join('')}</div>` : '') + `<div class="res">${items}</div>
     <p class="note">정답 회로와 내 배선에 같은 조작을 하면서 0.25초마다 기구·램프·전동기 상태를 비교했어요. 실제 채점 항목(치수, 새들, 외관 등)은 포함하지 않아요.</p>`);
   const gc = $('gChk'); if (gc) gc.onclick = () => { closeModal(); setMode('wire'); setVMode('chk'); };
+  const ga = $('gAI'); if (ga) ga.onclick = () => { closeModal(); setMode('wire'); setVMode('chk', true); openAI(); };
   const gr = $('gRec'); if (gr) gr.onclick = () => { tmrRecord(`${pass}/${res.length}`); gr.disabled = true; gr.textContent = '기록했어요'; };
 }
 function optextHtml(){
@@ -3262,7 +3581,7 @@ function bindUI(){
   $('modalClose').onclick = closeModal;
   $('modal').addEventListener('click', e => { if (e.target === $('modal')) closeModal(); });
   document.addEventListener('keydown', e => {
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
     if (e.key === 'Escape'){ if (!$('modal').hidden) return closeModal(); if (!$('tmrPop').hidden) return tmrToggle(false); if (SEQ.open && !SEQ.dock) return seqClose(); if (APP.ans.trace) return ansTrace(null); if (APP.pend){ APP.pend = null; showPend(); } if (APP.sel){ APP.sel = null; renderWires(); } return; }
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && SEQ.open && !SEQ.dock){ e.preventDefault(); return $('seqUndo').click(); }
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z'){ e.preventDefault(); return e.shiftKey ? redo() : undo(); }
@@ -3287,6 +3606,7 @@ function boot(){
   requestAnimationFrame(() => fitAll());
   if (!loadJSON(`${STORE}-p${start}`) || !g.last) setTimeout(() => toast('외부 배선은 예시로 채워 두었어요. 제어판 안쪽을 직접 연결해 보세요'), 400);
   if (window.claude && window.claude.hot && window.claude.hot.snapshot) window.claude.hot.snapshot(() => ({ pn:PN }));
+  aiInit();
 }
 boot();
 
