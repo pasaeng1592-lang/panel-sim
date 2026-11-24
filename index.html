@@ -198,6 +198,35 @@ button,input,select{font:inherit;color:inherit}
 .citem.dangle{border-left-color:#9aa3ad} .citem.dangle b{color:#c3cad2}
 .citem.miss{border-left-color:#ff4b3a;border-left-style:dashed} .citem.miss b{color:#ff8a7c}
 .citem[aria-current="true"]{border-color:var(--amber);box-shadow:inset 0 0 0 1px var(--amber)}
+.res-item.gfgo{cursor:pointer;transition:border-color .12s,background .12s}
+.res-item.gfgo:hover,.res-item.gfgo:focus-visible{border-color:var(--amber);outline:none;background:#2a2118}
+.res-item .gfcue{display:block;margin-top:6px;font-size:12px;font-weight:600;color:var(--amber)}
+.gfbar{position:absolute;top:10px;left:10px;max-width:calc(100% - 250px);display:flex;align-items:center;gap:6px;background:rgba(17,20,24,.95);border:1px solid #e8563f;border-radius:8px;padding:4px 5px 4px 7px;font-size:12.5px;z-index:3;box-shadow:0 3px 12px rgba(0,0,0,.4)}
+.gfbar .gfng,.gfcard .gfng{background:#3d1c18;color:var(--bad);font-family:var(--font-mono);font-size:11.5px;font-weight:600;border-radius:4px;padding:2px 6px;white-space:nowrap}
+.gfbar .gft{min-width:0;flex:0 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.gfbar .gfn{color:#ffb35c;white-space:nowrap}
+.gfbar .gfn.ok{color:var(--ok)}
+.gfbar .gfb{background:var(--bg-2);border:1px solid var(--line-2);border-radius:6px;min-width:34px;height:32px;padding:0 7px;cursor:pointer;color:inherit;font-size:13px;touch-action:manipulation}
+.gfbar .gfb:hover{border-color:var(--amber)}
+.stage.gfon .modehint{display:none}
+.gfcard{margin-top:10px;background:var(--bg-2);border:1px solid #7a3a34;border-left:3px solid #e8563f;border-radius:8px;padding:9px 10px}
+.gfcard .gfhd{display:flex;align-items:center;gap:7px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.gfcard .gfnav{display:flex;gap:4px;margin-left:auto}
+.gfcard .gfnav .btn{padding:4px 9px;font-size:12px}
+.gfcard h3{margin:7px 0 2px;font-size:14px}
+.gfcard ul{margin:3px 0 5px;padding-left:18px;color:var(--muted);font-size:12px}
+.gfcard li{margin:1px 0}
+.gfcard .note{margin:4px 0}
+.gfcard .gfsum{margin:7px 0 6px;font-size:12.5px;line-height:1.5;color:#ffb35c}
+.gfcard .gfsum.ok{color:var(--ok)}
+.gfcard .row{margin-top:6px}
+.wire.gdim{opacity:.09}
+.wire.gdim .wire-hit{pointer-events:none}
+.wire.gctx{opacity:.45}
+.chkring.gfr{stroke:#ffc233;stroke-width:2.8;stroke-dasharray:none}
+.citem.over{border-left-color:#ffc233} .citem.over b{color:#ffd166}
+@media (max-width:900px){ .gfbar{top:48px;right:10px;max-width:none} .gfbar .gfn{margin-right:auto} }
+@media (max-width:600px){ .gfbar{flex-wrap:wrap;row-gap:3px} .gfbar .gft{order:9;flex-basis:100%;white-space:normal;line-height:1.35;padding:0 2px 2px} .gfbar .gfn{margin-right:auto} }
 .okmsg{margin:0;padding:10px;border:1px solid #2c6b4c;border-radius:8px;background:#122a1f;color:#a6efc6;font-size:13px}
 .gacts{margin:-4px 0 12px;align-items:center}
 .gtm{color:var(--muted);font-size:13px;margin-left:4px} .gtm b{font-family:var(--font-mono);color:var(--fg);font-weight:500}
@@ -393,6 +422,7 @@ button,input,select{font:inherit;color:inherit}
         <button id="vOut" aria-label="축소">－</button>
       </div>
       <div class="ansflag" id="ansFlag" hidden>정답 회로 보는 중</div>
+      <div class="gfbar" id="gfBar" hidden role="group" aria-label="채점 항목만 보기"></div>
       <div class="toast" id="toast" role="status" aria-live="polite"></div>
       <div class="tip" id="tip"></div>
     </section>
@@ -457,6 +487,7 @@ button,input,select{font:inherit;color:inherit}
         <div class="seg vmseg" id="vmSeg" role="group" aria-label="보기 선택"><button data-v="mine" class="on">내 배선</button><button data-v="chk">틀린 곳 점검</button><button data-v="ans">정답 회로</button></div>
         <p class="note" id="vmNote">'틀린 곳 점검'은 내 배선을 정답과 연결 기준으로 비교해서 잘못 이은 선·색 틀린 선·빠진 연결을 표시해요 (단자대 번호는 달라도 돼요). '정답 회로'에서는 주결선·보조결선·단자대별로 정답을 볼 수 있어요. 틀린 곳은 'AI에게 물어보기'로 질문을 만들어 AI에게 물어볼 수 있어요.</p>
         <div id="chkBox" hidden>
+          <div class="gfcard" id="chkGF" hidden></div>
           <div class="chksum" id="chkSum"></div>
           <div class="chkai" id="chkAI"></div>
           <div class="chklist" id="chkList"></div>
@@ -1169,10 +1200,10 @@ function findFault(ph, uf){
   for (const [root, bits] of ph){
     const n = pop3(bits & 7);
     if (n >= 2 || ((bits & 8) && n >= 1)){
-      const members = [];
-      for (const t of TERM_LIST) if (uf.find(t.idx) === root && members.length < 6 && t.kind !== 'tbo') members.push(t.label.replace(' (안쪽)', ''));
+      const members = [], ids = [];
+      for (const t of TERM_LIST) if (uf.find(t.idx) === root){ ids.push(t.id); if (members.length < 6 && t.kind !== 'tbo') members.push(t.label.replace(' (안쪽)', '')); }
       const names = [1,2,4].filter(b => bits & b).map(b => PHASE_NAME[b]);
-      return { kind: n >= 2 ? `단락 (${names.join('·')}가 한 선으로 이어짐)` : `지락 (${names.join('·')}이 보호도체에 닿음)`, members };
+      return { kind: n >= 2 ? `단락 (${names.join('·')}가 한 선으로 이어짐)` : `지락 (${names.join('·')}이 보호도체에 닿음)`, members, ids };
     }
   }
   return null;
@@ -1305,16 +1336,16 @@ function runSuite(userWires){
     const sr = newState(), su = newState();
     for (const s of [sr, su]){ s.supply = true; s.mccb = true; }
     solve(sr, R); solve(su, U);
-    let issue = null, hint = '';
+    let issue = null, hint = '', meta = {};
     const compare = (label, dt) => {
       if (issue) return;
-      if (su.fault){ issue = [`${label}: ${su.fault.kind} → ${su.fault.where || ''} [${su.fault.members.join(', ')}]`]; hint = '서로 다른 상(L1·L2·L3)이나 보호도체가 한 선으로 이어진 곳을 찾으세요.'; return; }
+      if (su.fault){ issue = [`${label}: ${su.fault.kind} → ${su.fault.where || ''} [${su.fault.members.join(', ')}]`]; hint = '서로 다른 상(L1·L2·L3)이나 보호도체가 한 선으로 이어진 곳을 찾으세요.'; meta = { fault:su.fault.ids || [] }; return; }
       const a = outputsOf(sr), b = outputsOf(su), diff = [];
       for (const k in a) if (a[k] !== b[k]) diff.push(k);
       if (!diff.length) return;
       const when = dt ? `${label} ${dt.toFixed(1)}초` : label;
       issue = diff.slice(0, 4).map(k => `${when}: ${outName(k)} — 정답 회로는 ${fmtOut(k, a[k])}, 내 배선은 ${fmtOut(k, b[k])}`);
-      hint = hintFor(diff[0]);
+      hint = hintFor(diff[0]); meta = { keys:diff };
     };
     const both = f => { f(sr, R); f(su, U); };
     const wait = (sec, label) => { let el = 0, nx = 0.25; while (el < sec - 1e-9 && !issue){ both((s, w) => tick(s, w, 0.05)); el += 0.05; if (el >= nx - 1e-9){ compare(label, el); nx += 0.25; } } compare(label, sec); };
@@ -1329,7 +1360,7 @@ function runSuite(userWires){
       else if (kind === 'trip'){ both((s, w) => { if (s.coil.EOCR) s.eocrTrip = true; solve(s, w); }); compare(st[1]); }
       else if (kind === 'reset'){ both((s, w) => { s.eocrTrip = false; solve(s, w); }); compare(st[1]); }
     }
-    results.push({ title, ok:!issue, issues:issue || [], hint });
+    results.push({ title, kind:'op', ok:!issue, issues:issue || [], hint, keys:meta.keys || [], fault:meta.fault || null });
   }
   return results;
 }
@@ -1347,7 +1378,7 @@ function checkRules(wires){
   const out = [], cnt = {};
   for (const w of wires){ cnt[w.a] = (cnt[w.a] || 0) + 1; cnt[w.b] = (cnt[w.b] || 0) + 1; }
   const over = Object.entries(cnt).filter(([, n]) => n > 2).map(([id, n]) => `${TERM[id].label}: ${n}가닥`);
-  out.push({ title:'한 단자 3가닥 이상 금지', ok:!over.length, issues:over.slice(0, 6), hint: over.length ? '한 나사에는 2가닥까지만 물려요. 옆 단자로 옮기고 점퍼하세요.' : '' });
+  out.push({ title:'한 단자 3가닥 이상 금지', kind:'over', terms:Object.keys(cnt).filter(id => cnt[id] > 2), ok:!over.length, issues:over.slice(0, 6), hint: over.length ? '한 나사에는 2가닥까지만 물려요. 옆 단자로 옮기고 점퍼하세요.' : '' });
   const uf = new UF(TERM_LIST.length), L = (a, b) => uf.union(IX(a), IX(b));
   for (let i = 1; i <= 20; i++){ L(`TB5.${i}i`, `TB5.${i}o`); L(`TB6.${i}i`, `TB6.${i}o`); }
   for (const k of [1,2,3]) L(`MCCB.${k}t`, `MCCB.${k}b`);
@@ -1357,26 +1388,28 @@ function checkRules(wires){
   for (const t of TERM_LIST){ const r = uf.find(t.idx), f = fixedPhase(t); if (f) netPh.set(r, (netPh.get(r) || 0) | f); if (isPE(t)) netPE.set(r, true); }
   const eLines = P.fam === 'A' ? ['TB4.E1','TB4.E2','TB4.E3','FLS.7','FLS.8'] : [];
   const lab = t => t.label.replace(' (안쪽)', '').replace(' (바깥쪽)', '');
-  const ci = [];
+  const ci = [], cw = [];
   for (const w of wires){
     const ta = TERM[w.a], tb = TERM[w.b], touch = ids => ids.includes(w.a) || ids.includes(w.b), r = uf.find(ta.idx);
     let want = null, alt = null, why = '';
-    if (touch(eLines)){ want = 'yellow'; why = 'FLS 전극선은 보조회로'; }
-    else if (P.fam === 'A' && touch(['FLS.1'])){ want = 'yellow'; alt = 'gy'; }
+    const side = e3Side(w, wires);
+    if (side === 'pe'){ want = 'gy'; why = 'E3에서 접지(PE)로 가는 선은'; }
+    else if (touch(eLines)){ want = 'yellow'; why = 'FLS 전극선은 보조회로'; }
+    else if (P.fam === 'A' && touch(['FLS.1'])){ want = 'yellow'; if (side === 'line') why = 'FLS 전극선은 보조회로'; else alt = 'gy'; }
     else if (netPE.get(r)){ want = 'gy'; why = '보호도체'; }
     else if (netPh.get(r)){ const b = netPh.get(r); if (pop3(b) === 1){ want = PHASE_COLOR[b]; why = `주회로 ${PHASE_NAME[b]}`; } }
     else { want = 'yellow'; why = '보조회로'; }
-    if (want && w.color !== want && w.color !== alt) ci.push(`${lab(ta)} ↔ ${lab(tb)}: ${why} ${COLORS[want].name} ${COLORS[want].size}㎟이어야 하는데 ${COLORS[w.color].name}`);
+    if (want && w.color !== want && w.color !== alt) cw.push(w.id), ci.push(`${lab(ta)} ↔ ${lab(tb)}: ${why} ${COLORS[want].name} ${COLORS[want].size}㎟이어야 하는데 ${COLORS[w.color].name}`);
   }
-  out.push({ title:'전선 색상 · 굵기', ok:!ci.length, issues:ci.slice(0, 8).concat(ci.length > 8 ? [`외 ${ci.length - 8}가닥`] : []),
-    hint: ci.length ? '주회로 L1 갈·L2 흑·L3 회 2.5㎟, 보조회로 황 1.5㎟, 보호도체 녹황 2.5㎟ (퓨즈 1차는 갈·회, 2차는 황)' : '' });
+  out.push({ title:'전선 색상 · 굵기', kind:'color', wires:cw, ok:!ci.length, issues:ci.slice(0, 8).concat(ci.length > 8 ? [`외 ${ci.length - 8}가닥`] : []),
+    hint: ci.length ? `주회로 L1 갈·L2 흑·L3 회 2.5㎟, 보조회로 황 1.5㎟, 보호도체 녹황 2.5㎟ (퓨즈 1차는 갈·회, 2차는 황${P.fam === 'A' ? ', FLS 전극선은 황, E3에서 접지로 가는 선은 녹황' : ''})` : '' });
   const pe = new UF(TERM_LIST.length);
   for (let i = 1; i <= 20; i++){ pe.union(IX(`TB5.${i}i`), IX(`TB5.${i}o`)); pe.union(IX(`TB6.${i}i`), IX(`TB6.${i}o`)); }
   for (const w of wires) pe.union(IX(w.a), IX(w.b));
   const root = pe.find(IX('TB1.PE'));
   const targets = [['TB2.PE','TB2 PE (M1)'], ['TB3.PE','TB3 PE (M2)']].concat(P.fam === 'A' ? [['FLS.1','FLS 1번 (E3 접지)']] : []);
   const miss = targets.filter(([id]) => pe.find(IX(id)) !== root).map(([, n]) => `${n}이 TB1 PE와 이어지지 않았어요`);
-  out.push({ title:'보호도체 (접지)', ok:!miss.length, issues:miss, hint: miss.length ? `TB1 PE → TB5 → 제어판 안 → TB6 → TB2·TB3 PE${P.fam === 'A' ? ', FLS 1번은 녹황선으로 PE에 연결' : ''}해요.` : '' });
+  out.push({ title:'보호도체 (접지)', kind:'pe', terms:(t => t.length ? t.concat(['TB1.PE']) : t)(targets.filter(([id]) => pe.find(IX(id)) !== root).map(([id]) => id)), ok:!miss.length, issues:miss, hint: miss.length ? `TB1 PE → TB5 → 제어판 안 → TB6 → TB2·TB3 PE${P.fam === 'A' ? ', FLS 1번은 녹황선으로 PE에 연결' : ''}해요.` : '' });
   return out;
 }
 let REF_W = [];
@@ -1879,18 +1912,21 @@ function renderWires(){
   const ans = APP.ans.on, chk = !ans && APP.chk.on, list = shownWires();
   if (ans) ansComputeRoots();
   APP.chk.res = chk ? runCheck() : null;
+  APP.chk.fz = chk && APP.chk.gf ? gfFocus(APP.chk.res) : null;
+  const FZ = APP.chk.fz;
   ROUTES = computeRoutes(list);
   gWires.textContent = ''; WIRE_EL.clear();
   const rl = { 'stroke-linecap':'round', 'stroke-linejoin':'round', fill:'none' };
-  const info = list.map(w => { const vis = !ans || ansVisible(w); return { w, vis, tr: ans && vis && ansTraced(w), cs: chk ? APP.chk.res.wires.get(w.id).st : null }; });
+  const info = list.map(w => { const vis = !ans || ansVisible(w); return { w, vis, tr: ans && vis && ansTraced(w), cs: chk ? APP.chk.res.wires.get(w.id).st : null, fz: FZ ? (FZ.err.has(w.id) ? 2 : FZ.ctx.has(w.id) ? 1 : 0) : -1 }; });
   if (ans) info.sort((p, q) => (p.vis + p.tr) - (q.vis + q.tr));
-  if (chk) info.sort((p, q) => (p.cs === 'ok' ? 0 : 1) - (q.cs === 'ok' ? 0 : 1));
-  for (const { w, vis, tr, cs } of info){
+  if (chk) info.sort(FZ ? (p, q) => p.fz - q.fz : (p, q) => (p.cs === 'ok' ? 0 : 1) - (q.cs === 'ok' ? 0 : 1));
+  for (const { w, vis, tr, cs, fz } of info){
     const r = ROUTES.get(w.id), c = COLORS[w.color], ww = WIRE_W[c.size];
-    const g = el('g', { class:'wire' + (vis ? '' : ' dim') + (tr ? ' traced' : '') + (cs === 'ok' && APP.sel !== w.id ? ' okw' : ''), 'data-id':w.id }, gWires);
+    const g = el('g', { class:'wire' + (vis ? '' : ' dim') + (fz === 0 ? ' gdim' : fz === 1 && APP.sel !== w.id ? ' gctx' : '') + (tr ? ' traced' : '') + (cs === 'ok' && APP.sel !== w.id && fz < 0 ? ' okw' : ''), 'data-id':w.id }, gWires);
     if (tr) el('path', Object.assign({ d:r.d, stroke:'#f2b648', 'stroke-width':ww + 8, 'stroke-opacity':0.5 }, rl), g);
     if (!ans && APP.sel === w.id) el('path', Object.assign({ d:r.d, stroke:'#7fd3ff', 'stroke-width':ww + 7, 'stroke-opacity':0.6 }, rl), g);
-    if (cs && cs !== 'ok') el('path', Object.assign({ d:r.d, stroke:CHK_COLOR[cs], 'stroke-width':ww + 9, 'stroke-opacity':0.78 }, rl, cs === 'dangle' ? { 'stroke-dasharray':'7 6' } : {}), g);
+    const glow = fz >= 0 ? (fz === 2 ? CHK_COLOR[cs] || '#ffc233' : null) : (cs && cs !== 'ok' ? CHK_COLOR[cs] : null);
+    if (glow) el('path', Object.assign({ d:r.d, stroke:glow, 'stroke-width':ww + 9, 'stroke-opacity':0.78 }, rl, cs === 'dangle' ? { 'stroke-dasharray':'7 6' } : {}), g);
     el('path', Object.assign({ d:r.d, stroke:'rgba(0,0,0,.55)', 'stroke-width':ww + 1.8 }, rl), g);
     el('path', Object.assign({ d:r.d, stroke:c.core, 'stroke-width':ww }, rl), g);
     if (c.stripe) el('path', Object.assign({ d:r.d, stroke:c.stripe, 'stroke-width':ww, 'stroke-dasharray':'9 7' }, rl, { 'stroke-linecap':'butt' }), g);
@@ -2003,7 +2039,7 @@ function updateLeds(){
 const STORE = 'jgg-panel-sim-v2';
 const APP = { wires:[], nextId:1, color:'yellow', tool:'draw', mode:'wire', sel:null, pend:null, hist:[], fut:[],
   st:null, opt:{ pinfn:true, tags:true, live:true, sound:true }, probe:[], speed:1, view:null,
-  ans:{ on:false, cats:{ main:true, aux:true, pe:true }, tbs:{}, trace:null }, chk:{ on:false, res:null, focus:null, more:false }, ver:0, lastGrade:null };
+  ans:{ on:false, cats:{ main:true, aux:true, pe:true }, tbs:{}, trace:null }, chk:{ on:false, res:null, focus:null, more:false, gf:null, fz:null }, ver:0, lastGrade:null };
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' })[c]);
 function save(){
@@ -2053,6 +2089,9 @@ function colorHint(a, b, color){
   const ts = [TERM[a], TERM[b]];
   for (const t of ts){ const f = fixedPhase(t); if (f && color !== PHASE_COLOR[f]) return `주회로(${PHASE_NAME[f]})에는 ${COLORS[PHASE_COLOR[f]].name} 2.5㎟를 써요`; }
   if (ts.some(isPE) && color !== 'gy') return '보호도체(PE)는 녹황색 2.5㎟를 써요';
+  const e3 = e3Side({ a, b }, APP.wires);
+  if (e3 === 'pe' && color !== 'gy') return 'E3에서 접지(PE)로 가는 선은 녹황색 2.5㎟를 써요';
+  if (e3 === 'line' && color !== 'yellow') return 'FLS 전극선(E1·E2·E3)은 황색 1.5㎟를 써요';
   if (ts.some(t => t.dev === 'F' && t.pin.endsWith('t')) && !['brown','gray'].includes(color)) return '퓨즈 1차는 주회로 전선(갈색·회색 2.5㎟)이에요';
   const aux = t => (t.dev === 'F' && t.pin.endsWith('b')) || ['relay','timer','flicker'].includes(PDEV[t.dev] && PDEV[t.dev].type) || (t.dev === 'FLS' && t.pin !== '1') ||
     (t.kind === 'ext' && BOX[t.box]) || t.dev === 'TB4' || ((t.dev === 'EOCR' || t.dev === 'MC1' || t.dev === 'MC2') && !fixedPhase(t));
@@ -2259,7 +2298,7 @@ function renderAnsPanel(){
   if (vm === 'chk') renderChkPanel();
   document.querySelectorAll('#ansCats .chip').forEach(c => c.setAttribute('aria-pressed', String(!!A.cats[c.dataset.k])));
   document.querySelectorAll('#ansTbs .chip').forEach(c => c.setAttribute('aria-pressed', String(!!A.tbs[c.dataset.k])));
-  $('ansFlag').hidden = vm === 'mine'; $('ansFlag').textContent = vm === 'ans' ? '정답 회로 보는 중' : '틀린 곳 점검 중'; $('ansFlag').classList.toggle('chk', vm === 'chk');
+  $('ansFlag').hidden = vm === 'mine'; $('ansFlag').textContent = vm === 'ans' ? '정답 회로 보는 중' : APP.chk.gf ? '채점 항목만 보는 중' : '틀린 곳 점검 중'; $('ansFlag').classList.toggle('chk', vm === 'chk');
   $('cardWire').hidden = APP.mode !== 'wire' || A.on;
   if (A.on){ ansComputeRoots(); $('ansCount').textContent = `진하게 표시 ${REF_W.filter(ansVisible).length} / ${REF_W.length}가닥`; }
   else $('ansCount').textContent = '체크한 것만 진하게 남아요';
@@ -2330,8 +2369,10 @@ function netDesc(root, exclude, lab){
 }
 function chkWant(w, info){
   const touch = ids => ids.includes(w.a) || ids.includes(w.b);
+  const side = e3Side(w, APP.wires);
+  if (side === 'pe') return ['gy', null, 'E3에서 접지(PE)로 가는 선에는'];
   if (P.fam === 'A' && touch(['TB4.E1','TB4.E2','TB4.E3','FLS.7','FLS.8'])) return ['yellow', null, 'FLS 전극선(E1·E2·E3)에는'];
-  if (P.fam === 'A' && touch(['FLS.1'])) return ['yellow', 'gy', 'FLS 1번(E3)에는'];
+  if (P.fam === 'A' && touch(['FLS.1'])) return side === 'line' ? ['yellow', null, 'FLS 전극선(E1·E2·E3)에는'] : ['yellow', 'gy', 'FLS 1번(E3)에는'];
   if (info && info.pe) return ['gy', null, '보호도체(PE)에는'];
   if (info && info.ph && pop3(info.ph) === 1) return [PHASE_COLOR[info.ph], null, `주회로(${PHASE_NAME[info.ph]})에는`];
   return ['yellow', null, '보조회로에는'];
@@ -2402,17 +2443,17 @@ function runCheck(){
     const comps = {}; for (const id of ids){ const c = f(id); (comps[c] = comps[c] || []).push(id); }
     const groups = Object.values(comps).sort((p, q) => q.length - p.length);
     if (groups.length === 1 && !badNets.has(r)) netsDone++;
-    for (const g of groups.slice(1)){ const [x, y] = nearestPair(g, groups[0]); missing.push({ r, x, y }); }
+    for (const g of groups.slice(1)){ const [x, y] = nearestPair(g, groups[0]); missing.push({ r, x, y, g }); }
   }
   missing.sort((p, q) => TERM[p.x].y - TERM[q.x].y || TERM[p.x].x - TERM[q.x].x);
-  return { wires, cnt, missing, netsDone, netsTotal };
+  return { wires, cnt, missing, netsDone, netsTotal, grp:f };
 }
 
 /* 보기 전환: 내 배선 / 틀린 곳 점검 / 정답 회로 */
 function setVMode(m, quiet){
-  if (m === 'ans'){ APP.chk.on = false; setAnsView(true, quiet); return; }
+  if (m === 'ans'){ APP.chk.on = false; APP.chk.gf = null; APP.chk.fz = null; gfRender(null, null); setAnsView(true, quiet); return; }
   const was = APP.ans.on ? 'ans' : APP.chk.on ? 'chk' : 'mine';
-  APP.ans.on = false; APP.ans.trace = null; APP.chk.on = m === 'chk'; APP.chk.focus = null; APP.chk.more = false;
+  APP.ans.on = false; APP.ans.trace = null; APP.chk.on = m === 'chk'; APP.chk.focus = null; APP.chk.more = false; APP.chk.gf = null; APP.chk.fz = null; gfRender(null, null);
   APP.pend = null; APP.sel = null;
   showPend(); renderWires(); renderAnsPanel(); setHint();
   if (quiet) return;
@@ -2429,6 +2470,7 @@ function drawChkMarks(){
   if (!REFS.chkG || !REFS.chkG.isConnected) REFS.chkG = el('g', { style:'pointer-events:none' }, gOver);
   REFS.chkG.textContent = '';
   const C = APP.chk.on && !APP.ans.on && APP.chk.res; if (!C) return;
+  if (APP.chk.fz){ gfMarks(C, APP.chk.fz); return; }
   const seen = new Set();
   for (const m of C.missing){ if (seen.has(m.x)) continue; seen.add(m.x); const t = TERM[m.x]; el('circle', { cx:t.x, cy:t.y, r:11, class:'chkring' }, REFS.chkG); }
   const fm = APP.chk.focus != null ? C.missing[APP.chk.focus] : null;
@@ -2441,26 +2483,248 @@ function drawChkMarks(){
 function renderChkPanel(){
   if (!APP.chk.on || APP.ans.on) return;
   const C = APP.chk.res || (APP.chk.res = runCheck());
-  const issues = [];
-  for (const w of APP.wires){ const r = C.wires.get(w.id); if (r && r.st !== 'ok') issues.push({ kind:r.st, w, r }); }
-  issues.sort((p, q) => ['bad','dangle','color'].indexOf(p.kind) - ['bad','dangle','color'].indexOf(q.kind));
-  const total = issues.length + C.missing.length;
+  const FZ = APP.chk.gf ? (APP.chk.fz || (APP.chk.fz = gfFocus(C))) : null, overK = FZ && APP.chk.gf.r.kind === 'over';
+  gfRender(C, FZ);
+  const issues = [], miss = FZ ? FZ.miss : C.missing, ord = ['bad','dangle','color','over'];
+  for (const w of APP.wires){ const r = C.wires.get(w.id); if (r && (FZ ? FZ.err.has(w.id) : r.st !== 'ok')) issues.push({ kind:overK || r.st === 'ok' ? 'over' : r.st, w, r }); }
+  issues.sort((p, q) => ord.indexOf(p.kind) - ord.indexOf(q.kind));
+  const total = issues.length + miss.length;
   aiRenderCard(total);
+  $('chkSum').hidden = !!FZ;
   $('chkSum').innerHTML = `<div class="chkstat"><b>${C.netsDone}<small> / ${C.netsTotal}</small></b><span>완성된 선 묶음</span></div>
     <div class="chkpills"><span class="cpill ok">맞음 ${C.cnt.ok}</span><span class="cpill bad">잘못 이음 ${C.cnt.bad}</span><span class="cpill warn">색 ${C.cnt.color}</span>${C.cnt.dangle ? `<span class="cpill">떠 있음 ${C.cnt.dangle}</span>` : ''}<span class="cpill miss">빠짐 ${C.missing.length}</span></div>`;
-  if (!total){ $('chkList').innerHTML = `<p class="okmsg">정답 회로와 연결이 모두 같아요. 채점하기로 동작까지 확인해 보세요.</p>`; return; }
-  const rows = issues.map(it => `<button class="citem ${it.kind}" data-w="${it.w.id}"${APP.sel === it.w.id ? ' aria-current="true"' : ''}><b>${CHK_NAME[it.kind]}</b><span>${esc(ansLabel(it.w.a))} ↔ ${esc(ansLabel(it.w.b))}</span><small>${esc(it.r.msg)}</small></button>`)
-    .concat(C.missing.map((m, i) => `<button class="citem miss" data-m="${i}"${APP.chk.focus === i ? ' aria-current="true"' : ''}><b>빠진 연결</b><span>${esc(ansLabel(m.x))} ↔ ${esc(ansLabel(m.y))}</span><small>${pairHint(m.x, m.y)} 이어야 해요</small></button>`));
+  if (!total){ $('chkList').innerHTML = FZ ? '' : `<p class="okmsg">정답 회로와 연결이 모두 같아요. 채점하기로 동작까지 확인해 보세요.</p>`; return; }
+  const rows = issues.map(it => `<button class="citem ${it.kind}" data-w="${it.w.id}"${APP.sel === it.w.id ? ' aria-current="true"' : ''}><b>${CHK_NAME[it.kind] || '3가닥'}</b><span>${esc(ansLabel(it.w.a))} ↔ ${esc(ansLabel(it.w.b))}</span><small>${esc(it.kind === 'over' ? GF_OVER : it.r.msg)}</small></button>`)
+    .concat(miss.map(m => [m, C.missing.indexOf(m)]).map(([m, i]) => `<button class="citem miss" data-m="${i}"${APP.chk.focus === i ? ' aria-current="true"' : ''}><b>빠진 연결</b><span>${esc(ansLabel(m.x))} ↔ ${esc(ansLabel(m.y))}</span><small>${pairHint(m.x, m.y)} 이어야 해요</small></button>`));
   const lim = APP.chk.more ? rows.length : 14;
   $('chkList').innerHTML = rows.slice(0, lim).join('') + (rows.length > lim ? `<button class="btn wide" id="chkMore">나머지 ${rows.length - lim}개 더 보기</button>` : '');
   $('chkList').querySelectorAll('.citem').forEach(b => { b.onclick = () => {
     if (b.dataset.w){ const id = +b.dataset.w, w = APP.wires.find(x => x.id === id); if (!w) return; APP.sel = id; APP.chk.focus = null; renderWires();
       const r = ROUTES.get(id), pts = r && r.pts; if (pts) { const mid = pts[Math.floor(pts.length / 2)]; focusOn(mid[0], mid[1]); }
-      const cr = C.wires.get(id); toast(cr.msg, cr.st === 'color' ? 'warn' : 'bad'); }
+      const cr = C.wires.get(id); toast(overK || !cr.msg ? GF_OVER : cr.msg, cr.st === 'color' ? 'warn' : 'bad'); }
     else { const i = +b.dataset.m, m = C.missing[i]; APP.chk.focus = APP.chk.focus === i ? null : i; APP.sel = null; renderWires();
       if (APP.chk.focus != null){ const a = TERM[m.x], c = TERM[m.y]; focusOn((a.x + c.x) / 2, (a.y + c.y) / 2); toast(`이어야 할 두 단자 · ${ansLabel(m.x)} ↔ ${ansLabel(m.y)} (${pairHint(m.x, m.y)})`, 'warn'); } }
   }; });
   const more = $('chkMore'); if (more) more.onclick = () => { APP.chk.more = true; renderChkPanel(); };
+}
+
+/* ===== 채점 결과에서 틀린 항목 하나만 보기 =====
+   동작 시험: 정답과 다르게 움직인 기구(코일·램프·전동기)마다, 정답 회로에서 전원(TB1)부터 그 기구까지
+   접점을 거쳐 가는 길(단순 경로)에 놓인 선 묶음과 그 길이 쓰는 단자(경로 단자)를 구한다.
+   그 선 묶음 안에서 경로 단자를 끊거나(빠진 연결) 경로 단자 쪽에 잘못 물린 선(잘못 이음)만 보여준다. */
+const GF = { res:null, ver:-1, pn:0, g:null };
+const GF_PAIRS = { eocr:[[1,7],[2,8],[3,9],[10,11],[11,5],[10,4]], mc:[[1,7],[2,8],[3,9],[4,10],[5,11]], relay:[[1,3],[8,6],[1,4],[8,5]], timer:[[1,3],[8,6],[8,5]], flicker:[[8,6],[8,5]], fls:[[4,3],[4,2]] };
+/* 정답 회로의 접점 그래프: 선 묶음(네트)이 점, 접점·퓨즈·차단기가 선. 코일·램프·전동기는 잇지 않음 */
+function gfGraph(){
+  if (GF.g && GF.g.src === REF_W) return GF.g;
+  /* 정답 배선에 선이 없는 핀(예: EOCR 11번은 10번과 속에서 이어져 있어 선이 없음)은 핀 자체를 점으로 둔다 */
+  const N = ansNets(), net = id => (TERM[id] && N.adj[id]) ? N.find(id) : null, node = id => TERM[id] ? (net(id) || '~' + id) : null, E = [];
+  const add = (pa, pb, dev) => { const a = node(pa), b = node(pb); if (a && b && a !== b) E.push({ a, b, pa, pb, dev }); };
+  add('F.1t', 'F.1b', 'F'); add('F.2t', 'F.2b', 'F');
+  for (const k of [1, 2, 3]) add(`MCCB.${k}t`, `MCCB.${k}b`, 'MCCB');
+  for (const d of DEVS) for (const [x, y] of GF_PAIRS[d.type] || []) add(`${d.id}.${x}`, `${d.id}.${y}`, d.id);
+  for (const s of Object.values(SLOT)) if (s.type === 'ss' || s.type === 'pb'){ add(`${s.id}.a1`, `${s.id}.a2`, s.id); add(`${s.id}.b1`, `${s.id}.b2`, s.id); }
+  if (P.fam === 'B'){ add('TB4.1', 'TB4.2', 'LS1'); add('TB4.3', 'TB4.4', 'LS2'); }
+  const SP = new Map();   // 전원 네트 → 그 네트의 TB1 단자
+  for (const id of ['TB1.L1', 'TB1.L2', 'TB1.L3']){ const n = net(id); if (n){ if (!SP.has(n)) SP.set(n, []); SP.get(n).push(id); } }
+  return (GF.g = { src:REF_W, N, net, E, S:new Set(SP.keys()), SP });
+}
+/* 전원(TB1 L1·L2·L3를 한 점으로)과 네트 t 사이의 단순 경로에 놓인 접점들: 가상 선 S–t를 넣고 블록(이중 연결 성분) 분해 */
+function gfBlock(G, t){
+  const S = '#S', nd = n => G.S.has(n) ? S : n;
+  if (nd(t) === S) return [];
+  const adj = new Map(), link = (u, v, e) => { if (!adj.has(u)) adj.set(u, []); adj.get(u).push([v, e]); };
+  G.E.forEach((e, i) => { const u = nd(e.a), v = nd(e.b); if (u !== v){ link(u, v, i); link(v, u, i); } });
+  link(S, t, -1); link(t, S, -1);
+  const disc = new Map(), low = new Map(), stk = []; let T = 0, out = null;
+  const dfs = (u, pe) => {
+    disc.set(u, ++T); low.set(u, T);
+    for (const [v, e] of adj.get(u) || []){
+      if (e === pe) continue;
+      if (!disc.has(v)){
+        stk.push(e); dfs(v, e); low.set(u, Math.min(low.get(u), low.get(v)));
+        if (low.get(v) >= disc.get(u)){ const b = []; let x; do { x = stk.pop(); b.push(x); } while (x !== e); if (b.includes(-1)) out = b; }
+      } else if (disc.get(v) < disc.get(u)){ stk.push(e); low.set(u, Math.min(low.get(u), disc.get(v))); }
+    }
+  };
+  dfs(S, null);
+  return (out || []).filter(e => e >= 0);
+}
+function gfLoadPins(k){
+  if (k === 'M1' || k === 'M2') return ['U', 'V', 'W'].map(x => `${k === 'M1' ? 'TB2' : 'TB3'}.${x}`);
+  if (SLOT[k]) return [`${k}.1`, `${k}.2`];
+  const d = PDEV[k], cp = d && COIL_PINS[d.type];
+  return cp ? cp.map(n => `${k}.${n}`) : [];
+}
+/* 기구 목록 → { sc: Map(네트 → 경로 단자), devs: 경로에 접점이 있는 기구 } */
+function gfScope(keys){
+  const G = gfGraph(), sc = new Map(), devs = new Set(), todo = [...keys], done = new Set();
+  const touch = (n, id) => { if (!n) return; if (!sc.has(n)) sc.set(n, new Set()); sc.get(n).add(id); if (G.SP.has(n)) for (const s of G.SP.get(n)) sc.get(n).add(s); };
+  while (todo.length){
+    const k = todo.shift(); if (done.has(k)) continue; done.add(k);
+    for (const pin of gfLoadPins(k)){
+      const t = G.net(pin); if (!t) continue;
+      touch(t, pin);
+      for (const i of gfBlock(G, t)){
+        const e = G.E[i], d = PDEV[e.dev]; touch(e.a, e.pa); touch(e.b, e.pb);
+        if (d && COIL_PINS[d.type]) devs.add(e.dev);
+        if (d && d.type === 'fls' && !done.has(e.dev)){   // FLS 접점은 전극(E1·E2·E3)과 FLS 전원에 따라 움직여요
+          todo.push(e.dev);
+          for (const [p, q] of [['7', 'TB4.E1'], ['8', 'TB4.E2'], ['1', 'TB4.E3']]){ touch(G.net(`${e.dev}.${p}`), `${e.dev}.${p}`); touch(G.net(q), q); }
+        }
+      }
+    }
+  }
+  return { sc, devs };
+}
+const GF_OVER = '한 단자에 3가닥 이상 물렸어요 · 2가닥까지만 물려요';
+/* FLS E3(1번)·TB4 E3에 물린 선이 어느 쪽으로 가는지: 그 선의 다른 끝에서 출발해(이 E3는 거치지 않고)
+   반대쪽 E3에 닿으면 전극선('line'), TB1·TB2·TB3 PE에 닿으면 접지로 가는 선('pe'), 아직 덜 이었으면 null */
+const E3_IDS = ['FLS.1', 'TB4.E3'];
+function e3Side(w, wires){
+  if (P.fam !== 'A') return null;
+  const at = E3_IDS.filter(id => w.a === id || w.b === id);
+  if (!at.length) return null;
+  if (at.length === 2) return 'line';
+  const from = w.a === at[0] ? w.b : w.a, other = E3_IDS.find(id => id !== at[0]), adj = {};
+  for (const x of wires) if (x !== w){ (adj[x.a] = adj[x.a] || []).push(x.b); (adj[x.b] = adj[x.b] || []).push(x.a); }
+  const seen = new Set([at[0], from]), q = [from]; let pe = false;
+  while (q.length){
+    const v = q.shift();
+    if (v === other) return 'line';
+    if (/^TB[123]\.PE$/.test(v)) pe = true;
+    const tw = twinOf(v);
+    for (const u of (adj[v] || []).concat(tw ? [tw] : [])) if (!seen.has(u)){ seen.add(u); q.push(u); }
+  }
+  return pe ? 'pe' : null;
+}
+
+/* 지금 배선에서, 정해 둔 선 묶음(sc: 네트 → 경로 단자) 안의 틀린 곳 고르기 */
+function gfPickScope(C, sc){
+  const err = new Set(), ctx = new Set(), miss = [], allT = new Set(), roots = new Map();
+  for (const s of sc.values()) for (const id of s) allT.add(id);
+  const rootsOf = n => { if (!roots.has(n)) roots.set(n, new Set([...sc.get(n)].map(id => C.grp(nodeOf(id))))); return roots.get(n); };
+  /* 빠진 연결: 떨어진 조각이 경로 단자 일부만 가지고 있으면 그 길이 끊긴 것 */
+  for (const m of C.missing){ const s = sc.get(m.r); if (!s) continue; let k = 0; for (const id of s) if (m.g.includes(id)) k++; if (k && k < s.size) miss.push(m); }
+  for (const w of APP.wires){
+    const r = C.wires.get(w.id); if (!r) continue;
+    if (r.st === 'bad'){ if ((sc.has(r.la) && rootsOf(r.la).has(C.grp(nodeOf(w.a)))) || (sc.has(r.lb) && rootsOf(r.lb).has(C.grp(nodeOf(w.b))))) err.add(w.id); }
+    else if ((r.st === 'ok' || r.st === 'color') && (allT.has(w.a) || allT.has(w.b))) ctx.add(w.id);
+  }
+  return { err, ctx, miss, rings:[] };
+}
+function gfFullNet(id){
+  const lab = refLab(), r = lab[id];
+  return new Map(r ? [[r, new Set(Object.keys(lab).filter(k => lab[k] === r))]] : []);
+}
+/* 지금 보고 있는 채점 항목의 틀린 곳 → { err:전선 id, ctx:같은 회로의 맞는 선, miss:빠진 연결, rings:표시할 단자, n:개수, akeys:AI 목록 키 } */
+function gfFocus(C){
+  const gf = APP.chk.gf; if (!gf || !C) return null;
+  const r = gf.r, bad = () => new Set(APP.wires.filter(w => { const x = C.wires.get(w.id); return x && x.st === 'bad'; }).map(w => w.id));
+  let F;
+  if (r.kind === 'op' && r.fault){
+    const ids = new Set(r.fault), err = new Set();
+    for (const w of APP.wires){ const x = C.wires.get(w.id); if (x && x.st === 'bad' && (ids.has(w.a) || ids.has(w.b))) err.add(w.id); }
+    F = err.size ? { err, ctx:new Set(), miss:[], rings:[] } : { err:bad(), ctx:new Set(), miss:[], rings:[], wide:true };
+  } else if (r.kind === 'op'){
+    F = gf.level === 2 ? { err:bad(), ctx:new Set(), miss:C.missing.slice(), rings:[] } : gfPickScope(C, gf.sc);
+  } else {
+    const R = checkRules(APP.wires).find(x => x.kind === r.kind) || { wires:[], terms:[] };
+    if (r.kind === 'color') F = { err:new Set(R.wires), ctx:new Set(), miss:[], rings:[] };
+    else if (r.kind === 'over'){ const t = new Set(R.terms); F = { err:new Set(APP.wires.filter(w => t.has(w.a) || t.has(w.b)).map(w => w.id)), ctx:new Set(), miss:[], rings:R.terms.slice() }; }
+    else { F = gfPickScope(C, gfFullNet('TB1.PE')); F.rings = R.terms.slice(); }
+  }
+  F.n = r.kind === 'over' ? F.rings.length : F.err.size + F.miss.length;
+  F.akeys = new Set([...F.err].map(id => 'w' + id).concat(F.miss.map(m => `m${m.x}~${m.y}`)));
+  return F;
+}
+const gfCount = (r, n) => `${n}${r.kind === 'over' ? '곳' : r.kind === 'color' ? '가닥' : '군데'}`;
+function gfWhat(gf, F){
+  const r = gf.r, n = gfCount(r, F.n);
+  if (r.kind === 'color') return `색이나 굵기가 틀린 선 ${n}`;
+  if (r.kind === 'over') return `전선이 3가닥 이상 물린 단자 ${n}`;
+  if (r.kind === 'pe') return `접지(보호도체) 선 묶음에서 찾은 틀린 곳 ${n}`;
+  if (r.fault) return F.wide ? `단락·지락이 난 곳을 바로 못 찾아서 잘못 이음 전체 ${n}를 보여줘요` : `단락·지락이 난 선 묶음에 물린 잘못 이음 ${n}`;
+  const names = r.keys.slice(0, 4).map(outName).join(' · ') + (r.keys.length > 4 ? ` 외 ${r.keys.length - 4}개` : '');
+  if (gf.level === 2) return `${names} 회로에서는 정답과 다른 연결을 못 찾아서, 잘못 이음·빠진 연결 전체 ${n}를 보여줘요`;
+  return `${names} 회로에서 찾은 틀린 곳 ${n}${gf.level === 1 ? ' (이 회로의 접점을 움직이는 기구 회로까지 넓혀서 찾았어요)' : ''}`;
+}
+
+/* 채점 결과의 NG 항목 하나를 배선판에서 보기 */
+function gfOpen(i){
+  const R = GF.res, r = R && R[i]; if (!r || r.ok) return;
+  closeModal(); setMode('wire'); setVMode('chk', true);
+  const gf = { i, r, ver:GF.ver, level:0, sc:null };
+  APP.chk.gf = gf;
+  if (r.kind === 'op' && !r.fault){
+    const S = gfScope(r.keys), C = APP.chk.res || runCheck(); gf.sc = S.sc;
+    if (!gfFocus(C).n){ gf.sc = gfScope(r.keys.concat([...S.devs])).sc; gf.level = 1; if (!gfFocus(C).n) gf.level = 2; }
+  }
+  APP.sel = null; APP.chk.focus = null; APP.chk.more = false;
+  renderWires(); renderAnsPanel(); gfFit();
+  const F = APP.chk.fz;
+  toast(F && F.n ? `'${r.title}' 항목의 틀린 곳 ${gfCount(r, F.n)}만 보여줘요` : `'${r.title}' 항목을 보여줘요`, F && F.n ? 'warn' : '');
+}
+function gfClose(){
+  if (!APP.chk.gf) return;
+  APP.chk.gf = null; APP.chk.fz = null; APP.chk.focus = null;
+  renderWires(); renderAnsPanel(); toast('전체 점검으로 돌아왔어요');
+}
+function gfStep(d){
+  const R = GF.res, gf = APP.chk.gf; if (!R || !gf) return;
+  const fails = R.map((r, i) => r.ok ? -1 : i).filter(i => i >= 0); if (!fails.length) return;
+  const k = fails.indexOf(gf.i);
+  gfOpen(fails[(k + d + fails.length) % fails.length]);
+}
+/* 틀린 곳이 다 보이게 화면 맞추기 */
+function gfFit(){
+  const F = APP.chk.fz; if (!F) return;
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  const pt = (x, y) => { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); };
+  for (const id of F.err){ const r = ROUTES.get(id); if (r && r.pts) for (const [x, y] of r.pts) pt(x, y); }
+  for (const m of F.miss) for (const id of [m.x, m.y]) pt(TERM[id].x, TERM[id].y);
+  for (const id of F.rings) if (TERM[id]) pt(TERM[id].x, TERM[id].y);
+  if (!isFinite(x0)) return;
+  const pad = 50, w = Math.max(420, x1 - x0 + pad * 2), h = Math.max(300, y1 - y0 + pad * 2);
+  /* 위쪽 막대가 가리는 만큼 위로 여유를 둬서, 틀린 곳이 막대 아래에 오게 */
+  const sr = stage.getBoundingClientRect(), br = $('gfBar').getBoundingClientRect();
+  const f = $('gfBar').hidden || !sr.height ? 0 : Math.min(0.4, Math.max(0, (br.bottom - sr.top + 6) / sr.height)), H = h / (1 - f);
+  setView((x0 + x1 - w) / 2, (y0 + y1 - h) / 2 - f * H, w, H);
+}
+/* 판 위 표시: 이 항목의 빠진 연결(점선)과 단자 */
+function gfMarks(C, F){
+  const G = REFS.chkG, few = F.miss.length <= 12;
+  for (const m of F.miss){
+    const a = TERM[m.x], b = TERM[m.y];
+    if (few) el('line', { x1:a.x, y1:a.y, x2:b.x, y2:b.y, class:'chkline' }, G);
+    for (const t of [a, b]) el('circle', { cx:t.x, cy:t.y, r:11, class:'chkring' }, G);
+  }
+  for (const id of F.rings){ const t = TERM[id]; if (t) el('circle', { cx:t.x, cy:t.y, r:12.5, class:'chkring gfr' }, G); }
+  const fm = APP.chk.focus != null ? C.missing[APP.chk.focus] : null;
+  if (fm) for (const id of [fm.x, fm.y]){ const t = TERM[id]; el('circle', { cx:t.x, cy:t.y, r:13.5, class:'chkring on' }, G); }
+}
+/* 작업판 위 막대 + '틀린 곳 점검' 칸 위 카드 */
+function gfRender(C, F){
+  const gf = APP.chk.gf, bar = $('gfBar'), card = $('chkGF');
+  stage.classList.toggle('gfon', !!(gf && F));
+  if (!gf || !F){ bar.hidden = true; card.hidden = true; return; }
+  const r = gf.r, fails = (GF.res || []).filter(x => !x.ok), pos = fails.indexOf(r) + 1, many = fails.length > 1, stale = APP.ver !== gf.ver, done = !F.n;
+  $('ansFlag').textContent = '채점 항목만 보는 중';
+  bar.hidden = false;
+  bar.innerHTML = `<b class="gfng">NG${many ? ` ${pos}/${fails.length}` : ''}</b><span class="gft">${esc(r.title)}</span><span class="gfn${done ? ' ok' : ''}">${done ? '다 고침' : `틀린 곳 ${gfCount(r, F.n)}`}</span>` +
+    (many ? '<button class="gfb" id="gfPrev" aria-label="이전 NG 항목">◀</button><button class="gfb" id="gfNext" aria-label="다음 NG 항목">▶</button>' : '') +
+    '<button class="gfb" id="gfX" aria-label="이 항목만 보기 끝내기">✕</button>';
+  const parts = [];
+  if (F.err.size && F.miss.length) parts.push(`잘못 이음 ${F.err.size}`, `빠진 연결 ${F.miss.length}`);
+  card.hidden = false;
+  card.innerHTML = `<div class="gfhd"><b class="gfng">NG</b><span>채점 결과 ${pos} / ${fails.length}</span>${many ? '<span class="gfnav"><button class="btn" id="gfPrevC">◀ 이전</button><button class="btn" id="gfNextC">다음 ▶</button></span>' : ''}</div>
+    <h3>${esc(r.title)}</h3>${r.issues.length ? `<ul>${r.issues.slice(0, 4).map(s => `<li>${esc(s)}</li>`).join('')}</ul>` : ''}${r.hint ? `<p class="note">확인할 곳: ${esc(r.hint)}</p>` : ''}
+    <p class="gfsum${done ? ' ok' : ''}">${done ? (stale ? '이 항목에서 찾은 틀린 곳을 다 고쳤어요. 다시 채점해서 확인해 보세요.' : '정답과 다른 연결을 찾지 못했어요. 시퀀스 회로도와 동작 사항을 다시 확인해 보세요.') : esc(gfWhat(gf, F)) + (parts.length ? ` · ${parts.join(' · ')}` : '')}</p>
+    ${stale && !done ? '<p class="note">채점한 뒤에 배선을 바꿨어요. 고친 곳은 목록에서 바로 빠져요.</p>' : ''}
+    <div class="row"><button class="btn${done ? ' primary' : ''}" id="gfRegrade">다시 채점</button><button class="btn" id="gfAll">전체 점검 보기</button></div>`;
+  const on = (id, f) => { const b = $(id); if (b) b.onclick = f; };
+  on('gfPrev', () => gfStep(-1)); on('gfNext', () => gfStep(1)); on('gfX', gfClose);
+  on('gfPrevC', () => gfStep(-1)); on('gfNextC', () => gfStep(1)); on('gfAll', gfClose); on('gfRegrade', openGrade);
 }
 
 /* ===== AI에게 물어보기: 틀린 곳 · 정답 연결 · 내 배선을 질문 하나로 정리 =====
@@ -2506,6 +2770,8 @@ function aiIssues(){
 }
 /* 처음 고를 곳: 점검 목록에서 하나를 골라 둔 상태면 그것만, 아니면 전부 */
 function aiDefaultPicks(list){
+  const F = APP.chk.gf && APP.chk.fz;
+  if (F) return new Set(list.filter(it => F.akeys.has(it.key)).map(it => it.key));
   const w = APP.sel != null && list.find(it => it.key === 'w' + APP.sel);
   if (w) return new Set([w.key]);
   const C = APP.chk.res, fm = APP.chk.focus != null && C && C.missing[APP.chk.focus];
@@ -2516,7 +2782,7 @@ function aiDefaultPicks(list){
 function aiGradeFails(){
   const k = `${PN}:${APP.ver}`;
   if (!AI.gc || AI.gc.k !== k) AI.gc = { k, f:runSuite(APP.wires).concat(checkRules(APP.wires)).filter(r => !r.ok && r.title !== '전선 색상 · 굵기') };
-  return AI.gc.f;
+  return APP.chk.gf ? AI.gc.f.filter(r => r.title === APP.chk.gf.r.title) : AI.gc.f;
 }
 /* 정답 회로에서 같은 선으로 이어져야 하는 단자 묶음 (TB5·TB6 번호는 빼고) */
 function aiRefNets(){
@@ -2546,7 +2812,7 @@ function aiPrompt(forClaude){
     '- TB1은 전원(L1·L2·L3·PE), TB2는 전동기 M1, TB3은 전동기 M2 단자대예요. ' + (P.fam === 'A' ? 'TB4는 FLS 전극(E1·E2·E3) 단자대예요.' : 'TB4는 리밋스위치 단자대예요(1·2번 LS1 접점, 3·4번 LS2 접점).'),
     '- TB5는 제어판 위쪽, TB6은 아래쪽 단자대예요. "안쪽"은 제어판 안쪽 나사, "바깥"은 외부 배관 쪽 나사예요. TB5·TB6 단자 번호는 사람마다 달라도 돼요.',
     '- 정답과 비교한 기준은 "어떤 단자끼리 같은 선(같은 전위)으로 이어졌나"예요.',
-    '- 전선 색: 주회로 L1 갈색·L2 흑색·L3 회색 2.5㎟, 보조회로 황색 1.5㎟, 보호도체 녹황 2.5㎟.');
+    '- 전선 색: 주회로 L1 갈색·L2 흑색·L3 회색 2.5㎟, 보조회로 황색 1.5㎟, 보호도체 녹황 2.5㎟.' + (P.fam === 'A' ? ' FLS 전극선(E1·E2·E3)은 황색이고, E3에서 접지(PE)로 가는 선은 녹황이에요.' : ''));
   if (O.op && OPTEXT_ALL[PN]) L.push('', '[동작 사항 (공개문제 원문)]', ...OPTEXT_ALL[PN].filter(s => !/^※/.test(s)));
   const all = I.list.length;
   L.push('', sel.length ? `[틀린 곳 ${sel.length}군데]${sel.length < all ? ` (전체 ${all}군데 중 고른 것)` : ''}` : '[틀린 곳]');
@@ -2664,7 +2930,7 @@ async function aiCopy(){
 }
 
 /* 모달 */
-function aiPickKey(){ return `${PN}:${APP.ver}`; }
+function aiPickKey(){ return `${PN}:${APP.ver}:${APP.chk.gf ? APP.chk.gf.r.title : ''}`; }
 function openAI(){
   const I = aiIssues();
   if (!AI.picks || AI.pickKey !== aiPickKey()){ AI.picks = aiDefaultPicks(I.list); AI.pickKey = aiPickKey(); }
@@ -2730,7 +2996,7 @@ function aiRenderCard(total){
   const box = $('chkAI'); if (!box || !APP.chk.on || APP.ans.on) return;
   const A = AI.ans && AI.ans.pn === PN ? AI.ans : null;
   const old = box.querySelector('.aitext'), top = old ? old.scrollTop : 0;
-  const btn = total ? `<div class="row aibar"><button class="btn primary" id="btnAI">AI에게 물어보기</button><span class="note">틀린 곳을 질문 하나로 정리해요</span></div>` : '';
+  const btn = total ? `<div class="row aibar"><button class="btn primary" id="btnAI">AI에게 물어보기</button><span class="note">${APP.chk.gf ? '이 항목의 틀린 곳만 골라서 물어봐요' : '틀린 곳을 질문 하나로 정리해요'}</span></div>` : '';
   const ans = A ? `<details class="aians"${AI.cardOpen ? ' open' : ''}><summary>Claude 답변${A.state === 'run' ? ' · 쓰는 중' : ''}${A.ver !== APP.ver ? ' · 배선 바꾸기 전 답' : ''}</summary>
     <div class="aitext">${aiAnsHtml()}</div>
     <div class="row">${A.state === 'run' ? '<button class="btn" id="aiCardStop">멈추기</button>' : '<button class="btn" id="aiCardClear">답 지우기</button>'}</div></details>` : '';
@@ -2993,10 +3259,12 @@ function openModal(title, html, cls){ $('modalTitle').textContent = title; $('mo
 function closeModal(){ $('modal').hidden = true; }
 function openGrade(){
   const res = runSuite(APP.wires).concat(checkRules(APP.wires)), pass = res.filter(r => r.ok).length, t = tm();
-  const items = res.map(r => `<div class="res-item ${r.ok ? 'pass' : 'fail'}"><div class="mark">${r.ok ? 'OK' : 'NG'}</div><div><b>${esc(r.title)}</b>` +
-    (r.issues.length ? `<ul>${r.issues.map(i => `<li>${esc(i)}</li>`).join('')}</ul>` : '') + (r.hint ? `<p class="note">확인할 곳: ${esc(r.hint)}</p>` : '') + `</div></div>`).join('');
+  const items = res.map((r, gi) => `<div class="res-item ${r.ok ? 'pass' : 'fail gfgo'}"${r.ok ? '' : ` data-gi="${gi}" role="button" tabindex="0" aria-label="${esc(r.title)} · 배선판에서 이 부분만 보기"`}><div class="mark">${r.ok ? 'OK' : 'NG'}</div><div><b>${esc(r.title)}</b>` +
+    (r.issues.length ? `<ul>${r.issues.map(i => `<li>${esc(i)}</li>`).join('')}</ul>` : '') + (r.hint ? `<p class="note">확인할 곳: ${esc(r.hint)}</p>` : '') + (r.ok ? '' : '<span class="gfcue">눌러서 배선판에서 이 부분만 보기 ›</span>') + `</div></div>`).join('');
   const tt = P.fam === 'A' ? `T ${t.T}초, FR ${t.FR}초` : `T1 ${t.T1}초, T2 ${t.T2}초`;
   APP.lastGrade = { pn:PN, pass, total:res.length, ver:APP.ver };
+  GF.res = res; GF.ver = APP.ver; GF.pn = PN;
+  if (APP.chk.gf){ APP.chk.gf = null; APP.chk.fz = null; if (APP.chk.on){ renderWires(); renderAnsPanel(); } }
   const ms = tmrElapsed(), acts = [];
   if (pass < res.length) acts.push('<button class="btn primary" id="gChk">틀린 곳 점검 보기</button><button class="btn" id="gAI">AI에게 물어보기</button>');
   if (ms >= 1000) acts.push(`<span class="gtm">타이머 <b>${fmtHMS(ms, true)}</b>${tmrRunning() ? ' (진행 중)' : ''}</span><button class="btn" id="gRec">이 결과로 기록</button>`);
@@ -3006,6 +3274,7 @@ function openGrade(){
   const gc = $('gChk'); if (gc) gc.onclick = () => { closeModal(); setMode('wire'); setVMode('chk'); };
   const ga = $('gAI'); if (ga) ga.onclick = () => { closeModal(); setMode('wire'); setVMode('chk', true); openAI(); };
   const gr = $('gRec'); if (gr) gr.onclick = () => { tmrRecord(`${pass}/${res.length}`); gr.disabled = true; gr.textContent = '기록했어요'; };
+  document.querySelectorAll('#modalBody .gfgo').forEach(b => { const go = () => gfOpen(+b.dataset.gi); b.onclick = go; b.onkeydown = e => { if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); go(); } }; });
 }
 function optextHtml(){
   return (OPTEXT_ALL[PN] || []).map(s => /^[가-힣]\)/.test(s) ? `<h4>${esc(s)}</h4>` : `<p>${esc(s)}</p>`).join('') + '<p style="color:var(--muted);margin-top:10px">공개문제 원문의 동작 사항을 옮겼어요.</p>';
@@ -3536,7 +3805,7 @@ function switchProblem(n, first){
     APP.wires = saved.wires.filter(validWire);
     APP.nextId = Math.max(saved.nextId || 1, ...APP.wires.map(w => w.id + 1), 1);
   } else { APP.wires = []; APP.nextId = 1; fillExternal(true); }
-  APP.chk.focus = null; APP.chk.more = false;
+  APP.chk.focus = null; APP.chk.more = false; APP.chk.gf = null; APP.chk.fz = null; GF.res = null; gfRender(null, null);
   buildBoard(); bindTips(); applyOpts(); buildAnsChips(); renderWires(); renderAnsPanel(); buildRunPanel();
   if (SEQ.open) seqOpen(SEQ.dock); else seqBadge();
   $('plateNum').textContent = `P-${String(n).padStart(2, '0')}`;
@@ -3582,7 +3851,7 @@ function bindUI(){
   $('modal').addEventListener('click', e => { if (e.target === $('modal')) closeModal(); });
   document.addEventListener('keydown', e => {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
-    if (e.key === 'Escape'){ if (!$('modal').hidden) return closeModal(); if (!$('tmrPop').hidden) return tmrToggle(false); if (SEQ.open && !SEQ.dock) return seqClose(); if (APP.ans.trace) return ansTrace(null); if (APP.pend){ APP.pend = null; showPend(); } if (APP.sel){ APP.sel = null; renderWires(); } return; }
+    if (e.key === 'Escape'){ if (!$('modal').hidden) return closeModal(); if (!$('tmrPop').hidden) return tmrToggle(false); if (SEQ.open && !SEQ.dock) return seqClose(); if (APP.ans.trace) return ansTrace(null); const busy = APP.pend || APP.sel; if (APP.pend){ APP.pend = null; showPend(); } if (APP.sel){ APP.sel = null; renderWires(); } if (!busy && APP.chk.gf) gfClose(); return; }
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && SEQ.open && !SEQ.dock){ e.preventDefault(); return $('seqUndo').click(); }
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z'){ e.preventDefault(); return e.shiftKey ? redo() : undo(); }
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y'){ e.preventDefault(); return redo(); }
